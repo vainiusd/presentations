@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Packet walk in containerland</title>
+  <meta name="description" content="Data Packet's (not) secure journeys in containerland. SecurityDay'19" />
+  <meta name="author" content="Vainius Dangovas, UAB Santa Monica Networks" />
+  <link href="css/index.css" rel="stylesheet" />
+</head>
+<style>
+</style>
+</head>
+<body>
+<div id="impress">
+<div class="step slide" id="Title" data-x="0" data-y="0" data-z="2000" data-rotate="0" data-scale="1">
+  <!-- <p class="title-slide">Duomenų paketo (ne)saugios kelionės po konteinerizuotas aplinkas.<br>I dalis</p> -->
+  <p class="title-slide">Data Packet's (not) secure journeys in containerland<br>Part I</p>
+  <p class="title-name">Vainius Dangovas<br>
+  IT solution architect </p>
+  <img class="title-bottom-img" src="images/smn.png" alt="SMN logo">
+</div>
+<div class="step slide" id="About" data-x="2647" data-y="0" data-z="0" data-rotate="0" data-scale="1">
+  <p class="slide-title">Purpose of this talk</p>
+  <ul>
+    <li> Ongoing container orchestration tool development requires understanding key concepts</li>
+    <li> A lot of abstraction levels hide the technology details</li>
+    <li> Understanding: </li>
+    <ul id="sublist">
+      <li> what is really complex </li>
+      <li> what is simple, just in large scale</li>
+    </ul>
+    <li> Filling the gaps that are created doing copy/paste installations and configurations</li>
+  </ul>
+</div>
+<div class="step slide" id="Tools" data-x="2027" data-y="1701" data-rotate="40" data-scale="1">
+  <p class="slide-title">Tools and technologies</p>
+  <ul>
+    <li> Container technologies are trendy and fresh :)</li>
+    <li> 4 terms/tools allow explaining most of the available network features </li>
+    <li> Basic Linux usage knowledge required </li>
+    <li> Basic networking concept knowledge required </li>
+  </ul>  
+</div>
+<div class="step slide" id="Tools-IProute" data-x="2487" data-y="2087" data-z="-1100" data-rotate="40" data-scale="1">
+  <p class="slide-title">IP route2 (2006)</p>
+  <ul>
+    <li> CLI utility suite for network management and monitoring </li>
+    <li> Manage different network objects using consistent syntax </li>
+    <li> Toolkit that replaced net-tools (ifconfig, vconfig, route, arp etc.) </li>
+    <li> Usability and flexibility shown in demo setup scripts </li>
+    <li> Lots of documentation </li>
+  </ul>  
+ <a href="https://www.tldp.org/HOWTO/Adv-Routing-HOWTO/lartc.iproute2.html"> One of many guides <--</a>
+</div>
+<div class="step slide" id="Tools-NS" data-x="2946" data-y="2472" data-z="-2200" data-rotate="40" data-scale="1">
+  <p class="slide-title">Linux namespaces (2002)</p>
+  <ul>
+    <li> Fundamental aspect of containers </li>
+    <ol type="1">
+      <li>Mount - isolate filesystem mount points</li>
+      <li>UTS - isolate hostname and domain name</li>
+      <li>IPC - isolate interprocess communication (IPC) resources</li>
+      <li>PID - isolate the PID number space</li>
+      <li><u>Network - isolate network interfaces</u></li>
+      <li>User - isolate UID/GID number spaces</li>
+      <li>Cgroup - isolate cgroup root directory</li>
+    </ol>
+    <li> In R&S terms - VRF or routing instance </li>
+  </ul>
+</div>
+<div class="step slide" id="Tools-NetDev" data-x="3406" data-y="2858" data-z="-3300" data-rotate="40" data-scale="1">
+  <p class="slide-title">Linux network devices</p>
+  <ul>
+    <li> veth (virtual Ethernet device) - local Ethernet tunnel</li>
+      <ul id="sublist">
+        <li> similar to tap device </li>
+        <li> allows connectivity between network namespaces </li>
+      </ul>
+    <li> bridge - closest to a network switch inside Linux</li>
+    <li> tun/tap - kernel software loopback mechanism that forwards (L2/L3) packets to a userspace program </li>
+    <li> macvlan </li>
+    <li> ipvlan </li>
+    <li> ipip </li>
+    <li> gre, vxlan, geneve </li>
+  </ul>
+  <a href="https://developers.redhat.com/blog/2018/10/22/introduction-to-linux-interfaces-for-virtual-networking/">Linux interfaces for virtual networking</a>
+</div>
+<div class="step slide" id="Tools-iptables" data-x="3865" data-y="3244" data-z="-4400" data-rotate="40" data-scale="1">
+  <p class="slide-title">iptables (2000)</p>
+  <img class="slide-illustration" style="width: 1100px; height:440px;" src="images/iptables-chains.png" alt="IPTABLES">
+  <ul>
+    <li> Everyone knows it... a little </li>
+    <li> Concepts:</li>
+    <ul id="sublist">
+      <li> Tables </li>
+      <li> Chains </li>
+      <li> Targets </li>
+    </ul>
+    <li> Features:</li>
+    <ul id="sublist">
+      <li> Firewalling </li>
+      <li> SRC/DST NAT (masquerade) </li>
+      <li><u> Custom chaining </u></li>
+    </ul>
+  </ul>
+  <a href="https://www.booleanworld.com/depth-guide-iptables-linux-firewall/">For growing that knowledge.. a little</a>
+</div>
+<div class="step slide" id="Tools-IPVS" data-x="4325" data-y="3629" data-z="-5500" data-rotate="40" data-scale="1">
+  <p class="slide-title">IPVS - LVS (1998)</p>
+  <img class="slide-illustration" src="images/IPVS.svg" alt="IPVS">
+  <ul>
+    <li> No one knew it... until containers </li>
+    <li> L4 in-kernel loadbalancer </li>
+    <li> Features:</li>
+    <ul id="sublist">
+      <li> LB methods: rr, wrr, lc, wlc, src/dst hash, ...</li>
+      <li> Persistence </li>
+      <li> Flexible service definition </li>
+      <li> Direct return, IPIP, SNAT </li>
+    </ul>
+    <li> Actually used in high scale LB </li>
+  </ul>
+  <a href="http://www.linuxvirtualserver.org/Documents.html">Linux Virtual Server</a>
+</div>
+<div class="step slide" id="Legend" data-x="460" data-y="2606" data-z="0" data-rotate="80" data-scale="1">
+  <p class="slide-title">Legend and topology</p>
+  <img class="slide-illustration" src="images/legend.svg" alt="legend">
+  <img class="slide-illustration" style="float: left; width: 900px;" src="images/full.svg" alt="Full topology">
+</div>
+<div class="step slide" id="Container" data-x="-1323" data-y="2292" data-z="0" data-rotate="120" data-scale="1">
+  <p class="slide-title">What is a container?</p>
+  <p> Container = Isolated resources + Resource limitations + Files
+  </p>
+  <img class="slide-illustration" style=" width: 1200px; height: 600px" src="images/container.png" alt="container">
+</div>
+<div class="step slide" id="NS1" data-x="-1623" data-y="2812" data-z="-1100" data-rotate="120" data-scale="1">
+  <p class="slide-title">Network namespace (NS) in action</p>
+  <img class="slide-illustration" src="images/1-node.svg" alt="1 node topology">
+  <ul>
+    <li> Network namespace "con1" with virtual interface veth10 </li>
+    <li> No "normal" L3 gateway - route to itself via veth tunnel </li>
+    <li> Reachability only inside a node </li>
+  </ul>
+</div>
+<div class="step slide" id="NS-DEMO" data-x="-1923" data-y="3331" data-z="-2200" data-rotate="120" data-scale="1">
+  <p class="slide-title">NS implemented</p>
+<!--   <iframe src=" https://node01.smn.lab:4200" id="shell1" name="node01" frameborder="0" height="800" width="900"></iframe>
+  <iframe src=" https://node01.smn.lab:4200" id="shell2" name="node01" frameborder="0" height="800" width="900"></iframe> -->
+  <iframe src=" https://sd19node01:4200" id="shell1" name="node01" frameborder="0" height="800" width="900"></iframe>
+  <iframe src=" https://sd19node01:4200" id="shell2" name="node01" frameborder="0" height="800" width="900"></iframe>
+</div>
+<div class="step slide" id="NS-Meets-World" data-x="-2223" data-y="3851" data-z="-3300" data-rotate="120" data-scale="1">
+  <p class="slide-title">NS ingress/egress traffic</p>
+  <img class="slide-illustration" style=" width: 800px" src="images/NSWorld.svg" alt="NS Meets World">
+  <ul>
+    <li> L3 gateway: bridge interface. Route to default gateway br1 172.16.1.1/24 </li>
+    <li> Ingress/egress solutions depend on NAT or external reachability information </li>
+  </ul>
+</div>
+<div class="step slide" id="NS-MW-DEMO" data-x="-2523" data-y="4371" data-z="-4400" data-rotate="120" data-scale="1">
+  <p class="slide-title">NS ingress/egress traffic</p>
+  <div>
+<!--   <iframe src=" https://node01.smn.lab:4200" id="shell1" name="node01" frameborder="0" height="800" width="900"></iframe>
+  <iframe src=" https://node01.smn.lab:4200" id="shell2" name="node01" frameborder="0" height="800" width="900"></iframe> -->
+  <iframe src=" https://sd19node01:4200" id="shell1" name="node01" frameborder="0" height="800" width="900"></iframe>
+  <iframe src=" https://sd19node01:4200" id="shell2" name="node01" frameborder="0" height="800" width="900"></iframe>
+  </div>
+</div>
+<div class="step slide" id="Multiple-NS" data-x="-2487" data-y="905" data-z="0" data-rotate="160" data-scale="1">
+  <p class="slide-title">Increasing # of NS</p>
+  <ul>
+    <li> Container horizontal scale in node/multiple nodes </li>
+    <li> Starting to feel like the real container use case </li>
+    <li> Increasing amount of choices </li>
+  </ul>
+
+</div>
+<div class="step slide" id="Multiple-NS-one-node"data-x="-3051" data-y="1110" data-z="-1100" data-rotate="160" data-scale="1">
+  <p class="slide-title">Single node - multiple NS</p>
+  <img class="slide-illustration" src="images/SingleNode.svg" alt="NS reachability inside a single nodes">
+  <ul>
+    <li> Network namespaces reside in a LAN - L2 connectivity available </li>
+    <li> Iptables support firewalling bridged traffic </li>
+    <li> Ingress/egress solutions depend on NAT or external routing knowledge </li>
+    <li> Network structure in a node choices: </li>
+    <ul id="sublist">
+      <li> Flat L2 </li>
+      <li> Container in a subnet </li>
+      <li> Mix and match </li>
+      <li> Alternative Linux network devices </li>
+    </ul>
+  </ul>
+</div>
+<div class="step slide" id="MultiNode" data-x="-3615" data-y="1315" data-z="-2200" data-rotate="160" data-scale="1">
+  <p class="slide-title">Multiple node topology</p>
+  <img class="slide-illustration" style=" width: 1200px" src="images/MultiNode.svg" alt="NS reachability between multiple nodes">
+</div>
+<div class="step slide" id="MultiNode-DEMO" data-x="-4178" data-y="1521" data-z="-3300" data-rotate="160" data-scale="1">
+  <p class="slide-title">Multi-node topology implemented</p>
+<!--   <iframe src=" https://node01.smn.lab:4200" id="shell1" name="node01" frameborder="0" height="800" width="900"></iframe>
+  <iframe src=" https://node02.smn.lab:4200" id="shell2" name="node02" frameborder="0" height="800" width="900"></iframe> -->
+  <iframe src=" https://sd19node01:4200" id="shell1" name="node01" frameborder="0" height="800" width="900"></iframe>
+  <iframe src=" https://sd19node02:4200" id="shell2" name="node02" frameborder="0" height="800" width="900"></iframe>
+</div>
+<div class="step slide" id="Overlays" data-x="-4742" data-y="1726" data-z="-4400" data-rotate="160" data-scale="1">
+  <p class="slide-title">Other Multi-Node topologies and approaches</p>
+  <ul>
+    <li> Multi-Node container environment integrated with physical network: </li>
+    <ul id="sublist">
+      <li> Orchestrated physical network fabrics </li>
+      <li> Network reachability information adjacencies </li>
+      <li> New software integrations on network equipment </li>
+      <li> At least two independent software vendors </li>
+    </ul>
+    <li> A separate overlay network solely done by container hosting nodes: </li>
+    <ul id="sublist">
+      <li> Simpler physical transport network </li>
+      <li> Tunneling traffic and reachability information exchange methods </li>
+      <li> Server solutions inventing the wheel </li>
+      <li> Serverside hardware dataplane acceleration development and integration </li>
+    </ul>
+  </ul>
+</div>
+<div class="step slide" id="Services" data-x="-2487" data-y="-905" data-z="0" data-rotate="200" data-scale="1">
+  <p class="slide-title">Services in Multi-Node topologies</p>
+  <img class="slide-illustration" style=" width: 1200px" src="images/LB.svg" alt="Virtual Service LB">
+</div>
+<div class="step slide" id="IPVS-DEMO" data-x="-3051" data-y="-1110" data-z="-1100" data-rotate="200" data-scale="1">
+  <p class="slide-title">Ingress traffic to services [IPVS]</p>
+<!--   <iframe src=" https://node01.smn.lab:4200" id="shell1" name="node01" frameborder="0" height="800" width="900"></iframe>
+  <iframe src=" https://node02.smn.lab:4200" id="shell2" name="node02" frameborder="0" height="800" width="900"></iframe> -->
+  <iframe src=" https://sd19node01:4200" id="shell1" name="node01" frameborder="0" height="800" width="900"></iframe>
+  <iframe src=" https://sd19node02:4200" id="shell2" name="node02" frameborder="0" height="800" width="900"></iframe>
+</div>
+<div class="step slide" id="Services-problems" data-x="-3615" data-y="-1315" data-z="-2200" data-rotate="200" data-scale="1">
+  <p class="slide-title">Distributed service delivery problems</p>
+  <ul>
+    <li> Distributed ingress - redundant, but undeterministic</li>
+    <li> Double load balancing </li>
+    <li> Suboptimal data path with E-W </li>
+    <li> Multilayer SNATs to solve traffic asymmetry </li>
+  </ul>
+</div>
+<div class="step slide" id="Services-complexity" data-x="-4178" data-y="-1521" data-z="-3300" data-rotate="200" data-scale="1">
+  <p class="slide-title"> What makes container environments difficult to manage? </p>
+  <ul>
+    <li> Inconceivable amount (for humans) of dynamic state </li>
+    <li> Anything can be anywhere </li>
+    <li> No/little network troubleshooting tools  </li>
+    <li> Abstracted/layered solutions </li>
+  </ul>  
+</div>  
+<div class="step slide" id="Implementations" data-x="-1323" data-y="-2292" data-z="0" data-rotate="240" data-scale="1">
+  <p class="slide-title">Implementations in real life solutions</p>
+  <p> Most solutions divide into two groups: </p>
+  <ul>
+    <li> Popular orchestrated OSS solutions: Kubernetes,  Docker CE (Swarm)</li>
+    <li> Productized solutions: Kubernetes by $Vendor,  Docker EE (Swarm)</li>
+  </ul>
+  <p> Any way leads to the same solutions, only different maintenance and support models </p>
+</div>
+<div class="step slide" id="Docker-swarm" data-x="-1623" data-y="-2509" data-z="-1100" data-rotate="240" data-scale="1">
+  <p class="slide-title">Implementations in real life solutions: Docker Swarm</p>
+  <p> Good for smaller scale deployments or where as much as possible should be out-of-the-box. </p>
+    <ul>
+      <li> Extensively uses internal overlays </li>
+      <li> Services access distributed on all nodes </li>
+      <li> Internal load balancing by iptables + IPVS (difficult to seek by hand) </li>
+    </ul>
+</div>
+<div class="step slide" id="K8s" data-x="-1923" data-y="-3331" data-z="-2200" data-rotate="240" data-scale="1">
+  <p class="slide-title">Implementations in real life solutions: Kubernetes</p>
+  <p> Simpler from network standpoint, extensible architecture, used for extremely large deployments.</p>
+  <ul>
+    <li> Uses as little layers as possible </li>
+    <li> NATless, where possible. Similar to routed multi-node option </li>
+    <li> Various service delivery methods </li>
+    <ul id="sublist">
+      <li> ClusterIP (internal service) </li>
+      <li> NodePort (essentially DNAT to virtual service) - first overlay</li>
+      <li> Load Balancer - external balancer integration </li>
+      <li> Ingress - application load balancer instance </li>
+    </ul>
+    <li> Internal load balancing by kube-proxy (userspace), iptables, IPVS </li>
+  </ul>
+</div>
+<div class="step slide" id="TBD" data-x="460" data-y="-2606" data-z="0" data-rotate="280" data-scale="1">
+  <p class="slide-title">What's ahead?</p>
+  <ol>
+    <li> Container solutions inside-out </li>
+    <li> Network plugins and CNI </li>
+    <li> External network integrations </li>
+    <li> Distributed network security policies </li>
+    <li> Sidecar proxies - distributed application level security policies </li>
+  </ol>
+</div>
+<div class="step slide" id="Credits" data-x="2027" data-y="-1701" data-rotate="320" data-scale="1">
+  <p class="slide-title">Credits</p>
+  <p> Kristen Jacobs - Container Networking (<a href="https://www.youtube.com/watch?v=6v_BDHIgOY8&list=LLbqZ72axQdRHz37C7M-ujgg">Video</a>, 
+  <a href="https://github.com/kristenjacobs/container-networking">Source</a>)</p>
+  <p> SMN colleagues </p>
+  <p> CNI and Container networking configuration (<a href="https://www.youtube.com/watch?v=4E_l-B988Ek">Video</a>)</p>
+  <p> Docker Swarm networking <a href="https://neuvector.com/network-security/docker-swarm-container-networking/">article </a></p>
+  <p> Manual page, article and stackoverflow topic authors </p>
+</div>
+<div class="step" id="Thanks" data-x="0" data-y="0" data-z="4000" data-scale="1">
+  <h1 class="last-slide"> Ačiū! <br>
+   Thank you! </h1>
+</div>
+</div>
+<div id="impress-toolbar"></div>
+<div id="impress-help"></div>
+
+<script type="text/javascript" src="js/impress.js"></script>
+<script>impress().init()</script>
+
+</body>
+</html>

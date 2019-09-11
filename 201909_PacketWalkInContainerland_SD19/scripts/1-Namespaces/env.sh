@@ -1,0 +1,6 @@
+CON1="con1"
+CON1_VETH="veth10"
+VETH_TO_CON1="veth1"
+CON1_IP="172.16.0.10"
+
+NODE_IP="10.48.7.71"
