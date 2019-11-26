@@ -1,5 +1,6 @@
 ## Links
 
+* [The Internet Protocol Journal articel on QUIC](https://ipj.dreamhosters.com/wp-content/uploads/2019/03/ipj221-1.pdf)
 * [Amusing QUIC presentation (youtube)](https://www.youtube.com/watch?v=B1SQFjIXJtc)
 * [Protocol deep dive (youtube)](https://www.youtube.com/watch?v=mDc2kHPtavE)
 
