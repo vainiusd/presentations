@@ -2,7 +2,7 @@
 
 * Multistreaming
 * TLS1.3
-* TCP features alligned with HTTP needs
+* TCP features aligned with HTTP needs
 
 ![QUIC + HTTP2: https://blog.3g4g.co.uk/2018/02/quic-possibly-in-5g-3gpp-release-16.html](../illustrations/HTTP2_over_QUIC.gif "QUIC + HTTP2 https://blog.3g4g.co.uk/2018/02/quic-possibly-in-5g-3gpp-release-16.html")
 
